@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ระบบจัดการวัตถุ::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/DataTables/DataTables-1.10.18/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="/DataTables/Responsive-2.2.2/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/dropzone.min.css">
+
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/bootbox.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/jquery.dataTables.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/dataTables.bootstrap4.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/dataTables.responsive.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/responsive.bootstrap4.min.js"></script>
+    <script src="/scripts/dropzone.min.js"></script>
+    <script>
+        
+        var url = window.location.pathname;
+
+        Dropzone.autoDiscover = false;
+
+        $(document).ready(function(){
+            setupPage();
+            getCabinet();
+            getType();
+            $(".dropzone").dropzone({ 
+                url: "/manage/artifact/create",
+                autoProcessQueue: false,
+                paramName: 'image_field',
+                maxFiles: 1,
+                acceptedFiles: 'image/*',
+                dictDefaultMessage: 'คลิกเพื่อเลือกรูปหรือลากรูปมาวางที่นี่',
+                init: function() {
+                    myDropzone = this; 
+                    // for Dropzone to process the queue (instead of default form behavior):
+                    $("form").submit(function(e){
+                        // Make sure that the form isn't actually being sent.
+                        if(myDropzone.getQueuedFiles().length > 0){
+                            e.preventDefault();
+                            e.stopPropagation();
+                            myDropzone.processQueue();
+                        }
+                        else{
+                            alert("กรุณาเลือกรูปภาพ");
+                            return false;
+                        }
+                    });
+
+                    $(".btnReset").click(function(){
+                        myDropzone.removeAllFiles(true); 
+                    });
+
+                    //ถ้าอัพรูปเกิน 1 รูปจะลบรูปก่อนหน้าออก
+                    this.on("maxfilesexceeded", function(file) {
+                            this.removeAllFiles();
+                            this.addFile(file);
+                    });
+
+                    //ส่ง field อื่นๆไปด้วยพร้อมกับ file รูป
+                    this.on("sending", function(data, xhr, formData) {
+                        let txtNumber = $("#txtNumber").val();
+                        let txtYear = $("#txtYear").val();
+                        let txtCabinet = $("#txtCabinet").val();
+                        let txtType = $("#txtType").val();
+                        let txtNameTh = $("#txtNameTh").val();
+                        let txtNameEn = $("#txtNameEn").val();
+                        let txtDescTh = $("#txtDescTh").val();
+                        let txtDescEn = $("#txtDescEn").val();
+                        formData.append("txt_number", txtNumber);
+                        formData.append("txt_year", txtYear);
+                        formData.append("txt_cabinet", txtCabinet);
+                        formData.append("txt_type", txtType);
+                        formData.append("txt_name_th", txtNameTh);
+                        formData.append("txt_name_en", txtNameEn);
+                        formData.append("txt_description_th", txtDescTh);
+                        formData.append("txt_description_en", txtDescEn);
+                    });
+
+                    this.on("success", function(file, response){
+                        window.location.replace(response);
+                    });
+                }
+            });
+
+        });
+
+        function getCabinet(){
+            $.ajax({
+                method: "GET",
+                url: "/manage/cabinet/all"
+            }).done(function(dataSet, state, xhr){
+                $("#txtCabinet").append("<option value='99'>ไม่มีตู้</option>");    
+                $.each(dataSet, function(index, data){
+                    
+                    $("#txtCabinet").append("<option value='"+data.cab_id+"'>ตู้ที่ "+data.cab_number+"</option>");
+                });
+            }).fail(function(xhr, state){
+                alert("Error");
+            });
+        }
+
+        function getType(){
+            $.ajax({
+                method: "GET",
+                url: "/manage/type/all"
+            }).done(function(dataSet, state, xhr){
+                $.each(dataSet, function(index, data){
+                    $("#txtType").append("<option value='"+data.type_id+"'>"+data.type_number+" - "+data.type_th_name+"</option>");
+                });
+            }).fail(function(xhr, state){
+                alert("Error");
+            });
+        }
+
+        function setupPage(){
+            var navPath = url.split('/')[2]; //ไว้ดูว่าเรากำลังเปิดหน้าไหนอยู่
+            $("a.nav-link[href='/manage/"+navPath+"']").parent().addClass("active"); 
+
+            $("#breadcrumb").append("<li><a href='/manage/artifact'>ระบบจัดการวัตถุ</a></li>");
+            $("#breadcrumb").append("<li>เพิ่มวัตถุ</li>");
+
+            $(".page-bar > h4").text("ระบบจัดการตู้::เพิ่มวัตถุ");
+        }
+       
+        $(window).scroll(function (event) {
+            var scroll = $(window).scrollTop();
+            let pt = 60;
+            if(scroll == 0)
+                $("aside").css("padding-top", pt);
+            else if(scroll > 60)
+                $("aside").css("padding-top", 0);
+            else
+                $("aside").css("padding-top", pt-scroll);
+        });
+    </script>
+</head> 
+<body>
+        <header>
+            <h1><strong>MEKONG BASIN</strong> CIVILIZATION MUSEUM</h1>
+        </header>
+        <div class="container-fluid main-container h-100">
+            <div class="row h-100">
+                <aside class="col-2 ">
+                    <nav class="navbar navbar-expand h-100">
+                        <ul class="flex-md-column flex-row justify-content-between h-100">
+                            <li class="nav-small">
+                                เมนูหลัก
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="/manage/dashboard"><i class="fas fa-home"></i> หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/cabinet"><i class="fas fa-edit"></i> ระบบจัดการตู้</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/type"><i class="fas fa-edit"></i> ระบบจัดการชนิดวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/artifact"><i class="fas fa-edit"></i> ระบบจัดการวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/map"><i class="fas fa-map-marker-alt"></i> ระบบจัดการแผนผัง</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/qrcode"><i class="fas fa-qrcode"></i> ระบบจัดการ QR Code</a>
+                            </li>
+                            <li class="w-100 btn-delete">
+                                <a class="nav-link btn bg-orange" href="/manage/logout"><i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="col-10">
+                    <div class="page-bar">
+                        <h4>ระบบจัดการวัตถุ</h4>
+                        <div class="float-right">
+                            <ul id="breadcrumb">
+                                <li><a href="/manage">หน้าหลัก</a></li>
+                            </ul>
+                        </div>
+                        <div class="clear"></div>
+                    </div>
+                    <div class="content">
+                        <div class="box">
+                            <form id="artifactAdd" action="/manage/artifact/create" method="POST"  enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label class="col-12 col-md-4">รูปภาพวัตถุโบราณ: </label>        
+                                            <div class="dropzone drop-image text-center col-12 col-md-8">
+                                                <div class="fallback">
+                                                <input name="file" type="file" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row mt-5">
+                                            <label for="txtNumber"  class="col-12 ">หมายเลขวัตถุ: </label>
+                                            <input type="text" class="form-control" style="width: 450px;" name="txt_number" id="txtNumber" maxlength="10" placeholder="กรอกหมายเลขวัตถุ" required>
+                                        </div>
+                                        <div class="row mt-5">
+                                            <label for="txtYear"  class="col-12 ">ปีที่ได้รับวัตถุ (พ.ศ.): </label>
+                                            <input type="number" class="form-control" style="width: 450px;" name="txt_year" id="txtYear" max="9999" placeholder="กรอกปี พ.ศ." required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtCabinet"  class="col-12 ">เลือกตู้: </label>
+                                            <select class="custom-select" style="width: 450px;" name="txt_cabinet" id="txtCabinet" required>
+                                                <option value="" selected>กรุณาเลือกตู้</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtType"  class="col-12 ">ชนิดวัตถุ: </label>
+                                            <select class="custom-select" style="width: 450px;" name="txt_type" id="txtType" required>
+                                                <option value="" selected>กรุณาเลือกชนิดวัตถุ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtNameTh"  class="col-12 ">ชื่อของวัตถุ (ภาษาไทย): </label>
+                                            <input type="text" class="form-control" style="width: 450px;" name="txt_name_th" id="txtNameTh" maxlength="100" placeholder="กรอกชื่อวัตถุภาษาไทย" required>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtNameEn"  class="col-12 ">ชื่อของวัตถุ (English): </label>
+                                            <input type="text" class="form-control" style="width: 450px;" name="txt_name_en" id="txtNameEn" maxlength="100" placeholder="กรอกชื่อวัตถุภาษาอังกฤษ">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-4">
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtDescTh"  class="col-12 col-md-4">รายละเอียดวัตถุ (ภาษาไทย): </label>
+                                            <textarea class="form-control col-12 col-md-8" id="txtDescTh" name="txt_description_th" rows="10" maxlength="255" placeholder="กรอกรายละเอียดวัตถุภาษาไทย" required></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtDescEn"  class="col-12 col-md-4">รายละเอียดวัตถุ (English): </label>
+                                            <textarea class="form-control col-12 col-md-8" id="txtDescEn" name="txt_description_en" rows="10" maxlength="255" placeholder="กรอกรายละเอียดวัตถุภาษาอังกฤษ"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center mt-5">
+                                    <button type="submit" class="btn btn-primary btnAdd"><i class='fas fa-plus'></i> เพิ่ม</button>
+                                    <button type="reset" class="btn btn-danger btnReset ml-3"><i class='fas fa-undo'></i> ล้าง</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+</html>

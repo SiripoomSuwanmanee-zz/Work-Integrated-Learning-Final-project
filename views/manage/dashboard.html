@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ระบบจัดการ::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/highcharts.js"></script>
+
+</head> 
+    <script>
+        var url = window.location.pathname;
+        
+        var year = [];
+        var visitor = [];
+        const countTime = 500;
+        $(document).ready(function(){
+            setupPage();
+
+            getCount("artifact");
+            getCount("cabinet");
+            getCount("visitor");
+            
+            
+            var interval = setInterval(function(){ 
+                    getChart();
+                    clearInterval(interval); 
+            }, countTime);
+        });
+
+        function getChart(){
+            $.ajax({
+                method: "GET",
+                url: "/manage/visitor/getYear"
+            }).done(function(dataSet, state, xhr){
+
+                $.each(dataSet, function(index, data){
+                    year.push(data.year);
+                    visitor.push({name:data.year});
+                    getDay(data.year);
+                });
+
+                var interval = setInterval(function(){ 
+                    setYear();
+                    clearInterval(interval); 
+                }, countTime);
+                
+            }).fail(function(xhr, state){
+                alert("Error get year");
+            });
+            
+        }
+
+        function getDay(year){
+            $.ajax({
+                method: "GET",
+                url: "/manage/visitor/getDay/"+year
+            }).done(function(dataSet, state, xhr){
+                if(dataSet.length > 1)
+                {
+                    $.each(visitor, function(index, dataVisitor){
+                        if(visitor[index].name == year){
+                            var obj = [];
+                            for(let i=0; i<12; i++) 
+                                obj[i] = 0;
+                            
+                            $.each(dataSet, function(index, data){
+                                obj[data.month-1] = data.day;
+                            });
+
+                            visitor[index].data = obj;
+                        }
+                    });
+                }else{
+                    let data = dataSet[0];
+                    $.each(visitor, function(index, dataVisitor){
+                        
+                        if(visitor[index].name == year){
+                            
+                            var obj = [];
+                            for(let i=0; i<12; i++)
+                            {
+                                obj[i] = 0;
+                                if(i == data.month-1)
+                                    obj[i] = data.day;
+                                    
+                            }
+                            
+                            visitor[index].data = obj;
+                        }
+                    });
+                }
+                
+            }).fail(function(xhr, state){
+                alert("Error get day");
+            });
+            
+        }
+
+        function setYear(){
+            
+            var data = "";
+            $.each(year, function(index, year){
+                let currentYear = (new Date).getFullYear();
+                if(currentYear == year)
+                    data += "<option value='"+index+"' selected>"+year+"</option>";
+                else
+                    data += "<option value='"+index+"'>"+year+"</option>";
+            });
+
+            $("#year").html(data);
+
+            var interval = setInterval(function(){ 
+                    
+                    setChart($("#year").find(":selected").val());
+                    clearInterval(interval); 
+                }, countTime);
+            
+
+            $("#year").change(function(){
+                setChart($("#year").find(":selected").val());
+            });
+        }
+
+        function setChart(index){
+                var myChart = Highcharts.chart('chart', {
+                    chart: { type: 'areaspline' },
+                    title: { text: 'สถิติผู้เข้าชม' },
+                    subtitle: { text: 'สถิติผู้เข้าชมเว็บไซต์พิพิธภัณฑ์' },
+                    xAxis: { categories: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'] },
+                    yAxis: { title: { text: 'จำนวนผู้เข้าชม' } },
+                    plotOptions: {  line: { dataLabels: { enabled: true }, enableMouseTracking: true } },
+                    series: [visitor[index]]
+                });
+        }
+        
+        function getCount(table){
+            $.ajax({
+                method: "GET",
+                url: "/manage/count/"+table
+            }).done(function(data, state, xhr){
+                if(table == "artifact")
+                    $("#countArtifact").text(data.count_ar);
+                else if(table == "cabinet")
+                    $("#countCabinet").text(data.count_cab);
+                else if(table == "visitor")
+                    $("#countVisitor").text(data.count_visitor);
+            }).fail(function(xhr, state){
+                alert("Error");
+            });
+        }
+    
+        function setupPage(){
+            var navPath = url.split('/')[2]; //ไว้ดูว่าเรากำลังเปิดหน้าไหนอยู่
+            $("a.nav-link[href='/manage/"+navPath+"']").parent().addClass("active"); 
+        }
+        $(window).scroll(function (event) {
+            var scroll = $(window).scrollTop();
+            let pt = 60;
+            if(scroll == 0)
+                $("aside").css("padding-top", pt);
+            else if(scroll > 60)
+                $("aside").css("padding-top", 0);
+            else
+                $("aside").css("padding-top", pt-scroll);
+        });
+    </script>
+<body>
+        <header>
+            <h1><strong>MEKONG BASIN</strong> CIVILIZATION MUSEUM</h1>
+        </header>
+        <div class="container-fluid main-container h-100">
+            <div class="row h-100">
+                <aside class="col-2 ">
+                    <nav class="navbar navbar-expand h-100">
+                        <ul class="flex-md-column flex-row justify-content-between h-100">
+                            <li class="nav-small">
+                                เมนูหลัก
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="/manage/dashboard"><i class="fas fa-home"></i> หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/cabinet"><i class="fas fa-edit"></i> ระบบจัดการตู้</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/type"><i class="fas fa-edit"></i> ระบบจัดการชนิดวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/artifact"><i class="fas fa-edit"></i> ระบบจัดการวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/map"><i class="fas fa-map-marker-alt"></i> ระบบจัดการแผนผัง</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/qrcode"><i class="fas fa-qrcode"></i> ระบบจัดการ QR Code</a>
+                            </li>
+                            <li class="w-100 btn-delete">
+                                <a class="nav-link btn bg-orange" href="/manage/logout"><i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="col-10">
+                    <div class="page-bar">
+                        <h4>หน้าแรก</h4>
+                    </div>
+                    <div class="content">
+                        <div class="row">
+                            <div class="col-12 col-md-4">
+                                <div class="db-box bg-green2 ">
+                                    <div>
+                                        <small>จำนวนตู้ทั้งหมด</small>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h5 id="countCabinet"></h5>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-archive fa-3x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="db-box bg-pink">
+                                    <div>
+                                        <small>จำนวนวัตถุโบราณทั้งหมด</small>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h5 id="countArtifact"></h5>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-ankh fa-3x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="db-box bg-orange">
+                                    <div>
+                                        <small>จำนวนผู้เข้าชม</small>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h5 id="countVisitor"></h5>
+                                        </div>
+                                        <div class="col-4">
+                                            <i class="fas fa-user fa-3x"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box mt-5">
+                            <select id="year" class="float-right">
+                            </select>
+                            <div id="chart"></div>
+                            
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+</html>

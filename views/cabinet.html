@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/styles/styles_front.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script>
+        var url = window.location.pathname;
+        var id = url.substring(url.lastIndexOf('/')+1);
+        var lang;
+        $(document).ready(function(){
+            
+            if(id == "en")
+            {
+                lang = "en";
+                id = url.split('/')[2];
+            }
+            
+            $.ajax({
+                method: "GET",
+                url: "/manage/cabinet/"+id
+            }).done(function(data, state, xhr){
+                if(lang == "en")
+                {
+                    $("#title").text("Mekong Basin Civilization Museum");
+                    $("#lang").attr("href", "/cabinet/"+id).text("ภาษาไทย");
+                    $("#cabImage").attr("src", "/images/"+data.cab_image);
+                    $("#cabNumber").text("Cabinet Number "+ data.cab_number);
+                    $("#cabDetail").text(data.cab_en_detail);
+                }
+                else{
+                    $("#lang").attr("href", "/cabinet/"+id+"/en").text("English");
+                    $("#cabImage").attr("src", "/images/"+data.cab_image);
+                    $("#cabNumber").text("ตู้ที่ "+ data.cab_number);
+                    $("#cabDetail").text(data.cab_th_detail);
+                }
+
+                getArtifact(id);
+            }).fail(function(xhr, state){
+                alert("Error get cabinet");
+            });
+        });
+
+        function getArtifact(id){
+            $.ajax({
+                method: "GET",
+                url: "/manage/artifact/cabinet/"+id
+            }).done(function(dataSet, state, xhr){
+                if(lang == "en"){
+                    
+                    $.each(dataSet, function(index, data){
+                        let box = "";
+
+                        box += "<div class='col-6'>";
+                        box += "<div class= 'box'>";
+                        box += "<img src='/images/"+data.ar_image+"' width='100%' />";
+                        box += "<p>"+data.ar_en_name+"</p>";
+                        box += "<button class='btn btn-more' id="+data.ar_id+">See more</button>";
+                        box += "</div></div>";
+
+                        $(".artifact-box").append(box);
+                    })
+                }
+                else
+                {
+                    
+                    $.each(dataSet, function(index, data){
+                        let box = "";
+
+                        box += "<div class='col-6'>";
+                        box += "<div class= 'box'>";
+                        box += "<img src='/images/"+data.ar_image+"' width='100%' />";
+                        box += "<p>"+data.ar_th_name+"</p>";
+                        box += "<button class='btn btn-more' id="+data.ar_id+">ดูเพิ่มเติม</button>";
+                        box += "</div></div>";
+
+                        $(".artifact-box").append(box);
+                    })
+                }
+                
+                $(".btn-more").click(function(){
+                    let id = $(this).prop("id");
+                    if(lang == "en")
+                        window.location.replace("/artifact/"+id+"/en");
+                    else    
+                        window.location.replace("/artifact/"+id);
+                });
+        
+            }).fail(function(xhr, state){
+                alert("Error get artifact");
+            });
+        }
+        
+        function imgError(image) {
+            image.onerror = "";
+            image.src = "/images/noimage.jpg";
+            return true;
+        }
+       
+    </script>
+</head> 
+<body class="cabinet">
+    <header>
+        <div class="h-box">
+            <h3 id="title">พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</h3>
+        </div> 
+    </header>
+    <main class="container-fluid">
+        <div class="text-right">
+            <a href="/" class="lang" id="lang"></a>
+        </div>
+        <div class="col-12 box text-center">
+            <h5 class="text-center" id="cabNumber">ตู้ที่ 11</h5>
+            <img src="/images/noimage.jpg" width="100%" class="mt-4 rounded" id="cabImage"  onerror="imgError(this)" style="max-width: 800px;">
+            <p class="text-justify" id="cabDetail">จัดแสดงวัตถุทางวัฒนธรรมที่สะท้อนภาพในช่วงยุคอาณานิคม เช่น ช้อนรองเท้างาช้าง แสดงให้เห็นถึงการกดทับของเจ้าอาณานิคมที่มีต่อพม่า คือการนำงาช้างซึ่งเป็นของศักดิ์สิทธิ์มาใช้เป็นอุปกรณ์ช่วยในการสวมใส่รองเท้าของเจ้าอาณานิคมวัตถุทางวัฒนธรรมชิ้นนี้เป็นประจักษ์พยานของอำนาจที่เหนือกว่าความศรัทธาต่อประชาชนชาวพม่า นอกจากนี้ยังมีวัตถุเกี่ยวกับวัฒนธรรมฝิ่นได้แก่ กล้องยาสูบ เป้ง ตาชั่งฝิ่น เป็นต้น</p>
+           
+            
+        </div>
+        <div class="row artifact-box">    
+            
+        </div>
+    </main>
+    <footer>
+        <div class="row">
+            <div class="col-12 col-lg-4">
+                <a href="https://www.facebook.com/mekong.museum" target="_blank">
+                    <i class="fab fa-facebook-f fa-lg"></i> : พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง MFU
+                </a>
+            </div>
+            <div class="col-6 col-lg-4">
+                Email: example@email.com
+            </div>
+            <div class="col-6 col-lg-4">
+                Tel: 053-917068
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/styles/styles_front.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU"
+        crossorigin="anonymous">
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script>
+        var url = window.location.pathname;
+        var id = url.substring(url.lastIndexOf('/')+1);
+        var lang;
+        $(document).ready(function(){
+            
+            if(id == "en")
+            {
+                lang = "en";
+                id = url.split('/')[2];
+            }
+            
+            $.ajax({
+                method: "GET",
+                url: "/manage/artifact/"+id
+            }).done(function(data, state, xhr){
+                if(lang == "en")
+                {
+                    $("#title").text("Mekong Basin Civilization Museum");
+                    $("#arLang").attr("href", "/artifact/"+id).text("ภาษาไทย");
+                    $("#arImage").attr("src", "/images/"+data.ar_image);
+                    $("#arName").text(data.ar_en_name);
+                    $("#arType").text("Type: " + data.ar_type_en);
+                    $("#arYear").text("Year: " + data.ar_year);
+                    $("#arDetail").text(data.ar_en_detail);
+                }
+                else{
+                    if(data.ar_en_name == "null" || data.ar_en_name == "" || data.ar_en_name == null)
+                    {
+                        $("#arLang").addClass("d-none");
+                    }
+                    else{
+                        $("#arLang").attr("href", "/artifact/"+id+"/en").text("English");
+                    }
+                    $("#arImage").attr("src", "/images/"+data.ar_image);
+                    $("#arName").text(data.ar_th_name);
+                    $("#arType").text("ชนิดวัตถุ: " + data.ar_type);
+                    $("#arYear").text("ปีที่ได้รับ: " + data.ar_year);
+                    $("#arDetail").text(data.ar_th_detail);
+                }
+            }).fail(function(xhr, state){
+                alert("Error get artifact");
+            });
+        });
+
+        
+        function imgError(image) {
+            image.onerror = "";
+            image.src = "/images/noimage.jpg";
+            return true;
+        }
+    </script>
+
+</head>
+
+<body>
+    <header>
+        <div class="h-box">
+            <h3 id="title">พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</h3>
+        </div>
+    </header>
+    <main class="container-fluid">
+        <div class="text-right">
+            <a href="/" class="lang" id="arLang"></a>
+            
+        </div>
+        <div class="col-12 box">
+            <h5 class="text-center" id="arName"></h5>
+            <div class="text-center">
+                <img src="/images/noimage.jpg" width="100%" class="mt-4 rounded" id="arImage"  onerror="imgError(this)">
+                <div class="row mt-4">
+                    <div class="col-6">
+                        <p id="arType"></p>
+                    </div>
+                    <div class="col-6">
+                        <p id="arYear"></p>
+                    </div>
+                    <div class="col-12 text-left pt-4">
+                        <p id="arDetail"></p>
+                    </div>      
+                </div>
+            </div>
+
+        </div>
+    </main>
+    <footer >
+        <div class="row">
+            <div class="col-12 col-lg-4">
+                <a href="https://www.facebook.com/mekong.museum" target="_blank">
+                    <i class="fab fa-facebook-f fa-lg"></i> : พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง MFU
+                </a>
+            </div>
+            <div class="col-6 col-lg-4">
+                Email: example@email.com
+            </div>
+            <div class="col-6 col-lg-4">
+                Tel: 053-917068
+            </div>
+        </div>
+
+    </footer>
+</body>
+
+</html>

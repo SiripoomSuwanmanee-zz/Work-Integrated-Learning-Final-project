@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ระบบจัดการตู้::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/DataTables/DataTables-1.10.18/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="/DataTables/Responsive-2.2.2/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="/styles/styles.css">
+ 
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/bootbox.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/jquery.dataTables.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/dataTables.bootstrap4.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/dataTables.responsive.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/responsive.bootstrap4.min.js"></script>
+    <script>
+        var table;
+        
+        var url = window.location.pathname;
+
+        $(document).ready(function(){
+            setupPage();
+
+            
+            table = $('#table').DataTable({
+                language: {
+                    url: '/DataTables/DataTables-1.10.18/Thai.json'
+                },
+                responsive: true,      
+                deferRender: true,      
+                columns: [
+                    { data: "tbIndex", title: "#"},
+                    { data: "cab_number", title: "หมายเลขตู้" },
+                    { data: "cab_image", title: "รูปภาพตู้" , orderable: false},
+                    { data: "ar_count", title: "จำนวนวัตถุในตู้" },
+                    { data: "cab_active_flag", title: "สถานะ" },
+                    { data: "action", title: "การแก้ไข", orderable: false, width: "35%"}
+                ]
+            });
+            getCabinetAll();
+            
+            $(".btnAdd").click(function(){
+                window.location.replace("/manage/cabinet/add");
+            });
+        });
+        function setupPage(){
+            var navPath = url.split('/')[2]; //ไว้ดูว่าเรากำลังเปิดหน้าไหนอยู่
+            $("a.nav-link[href='/manage/"+navPath+"']").parent().addClass("active"); 
+            
+            $("#breadcrumb").append("<li><a href='/manage/cabinet'>ระบบจัดการตู้</a></li>");
+        }
+        function imgError(image) {
+            image.onerror = "";
+            image.src = "/images/noimage.jpg";
+            return true;
+        }
+        function getCabinetAll(){
+            $.ajax({
+                method: "GET",
+                url: "/manage/cabinet/all"
+            }).done(function(dataSet, state, xhr){
+                
+                let tbIndex = 0;
+                 
+                $.each(dataSet, function(index, data){
+                    data.tbIndex = tbIndex+1;
+                    tbIndex++;
+                    data.cab_number = "ตู้ที่ " + data.cab_number;
+
+                    data.cab_image = "<img src='/images/"+data.cab_image+"' alt='"+data.cab_image+"' onerror='imgError(this);' width='100'/>";
+                    if(data.cab_active_flag == 1)
+                        data.cab_active_flag = "<span class='text-green'>เปิด</span>";
+                    else if(data.cab_active_flag == 0)
+                        data.cab_active_flag = "<span class='text-red'>ปิด</span>";
+
+                    data.action = "<button class='btn bg-green mr-1 btnView'><i class='fas fa-eye'></i> ดูวัตถุ</button>";
+                    data.action += "<button class='btn btn-info mr-1 btnPrintQr'><i class='fas fa-print'></i> PrintQR</button>";
+                    data.action += "<button class='btn btn-warning mr-1 btnEdit'><i class='fas fa-pencil-alt'></i> แก้ไข</button>";
+                    data.action += "<button class='btn bg-danger mr-1 btnDelete'><i class='fas fa-trash-alt'></i> ลบ</button>";
+
+                    data.ar_count += " ชิ้น"
+                });
+
+                table.clear();
+                table.rows.add(dataSet).draw();
+
+                 $("#table tbody").on('click', '.btnDelete', function(){
+                     
+                    let selectedData = table.row($(this).parents('tr')).data();
+                    if(selectedData === undefined)
+                        selectedData = table.row($(this).parents('tr').prev('tr.parent')).data();
+                    bootbox.confirm("ต้องการที่จะลบข้อมูลนี้ใช่ไหม?", function(result){
+                        if(result == true){
+                            deleteCabinet(selectedData.cab_id);
+                        }
+                    });
+                    
+                    aragargarg(); // bootbox bug
+                });
+
+                $("#table tbody").on('click', '.btnPrintQr', function(){
+                    let selectedData = table.row($(this).parents('tr')).data();
+                    if(selectedData === undefined)
+                        selectedData = table.row($(this).parents('tr').prev('tr.parent')).data();
+                    printPageQr(selectedData.cab_id);
+                });
+
+                $(".btnPrintQrAll").click(function(){
+                    printPageQr("all");
+                });
+
+                $("#table tbody").on('click', '.btnView', function(){
+                    let selectedData = table.row($(this).parents('tr')).data();
+
+                    if(selectedData === undefined)
+                        selectedData = table.row($(this).parents('tr').prev('tr.parent')).data();
+
+                    window.location.replace("/manage/cabinet/view/"+selectedData.cab_id);
+                });
+
+                $("#table tbody").on('click', '.btnEdit', function(){
+                    let selectedData = table.row($(this).parents('tr')).data();
+                    if(selectedData === undefined)
+                        selectedData = table.row($(this).parents('tr').prev('tr.parent')).data();
+                    window.location.replace("/manage/cabinet/edit/"+selectedData.cab_id);
+                });
+
+            }).fail(function(xhr, state){
+                alert("Error");
+            });
+        }
+
+        function printPageQr(id) {
+            localStorage.setItem("type", "cabinet");
+            localStorage.setItem("id", id);
+            $("<iframe>").hide().attr("src", "/manage/printqr").appendTo("body"); 
+
+        }
+
+        function deleteCabinet(id){
+            $.ajax({
+                method: "DELETE",
+                url: "/manage/cabinet/delete/"+id
+            }).done(function(data, state, xhr){
+                
+                getCabinetAll();
+            });
+        }
+        $(window).scroll(function (event) {
+            var scroll = $(window).scrollTop();
+            let pt = 60;
+            if(scroll == 0)
+                $("aside").css("padding-top", pt);
+            else if(scroll > 60)
+                $("aside").css("padding-top", 0);
+            else
+                $("aside").css("padding-top", pt-scroll);
+        });
+    </script>
+</head> 
+<body>
+        <header>
+            <h1><strong>MEKONG BASIN</strong> CIVILIZATION MUSEUM</h1>
+        </header>
+        <div class="container-fluid main-container h-100">
+            <div class="row h-100">
+                <aside class="col-2 ">
+                    <nav class="navbar navbar-expand h-100">
+                        <ul class="flex-md-column flex-row justify-content-between h-100">
+                            <li class="nav-small">
+                                เมนูหลัก
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="/manage/dashboard"><i class="fas fa-home"></i> หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/cabinet"><i class="fas fa-edit"></i> ระบบจัดการตู้</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/type"><i class="fas fa-edit"></i> ระบบจัดการชนิดวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/artifact"><i class="fas fa-edit"></i> ระบบจัดการวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/map"><i class="fas fa-map-marker-alt"></i> ระบบจัดการแผนผัง</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/qrcode"><i class="fas fa-qrcode"></i> ระบบจัดการ QR Code</a>
+                            </li>
+                            <li class="w-100 btn-delete">
+                                <a class="nav-link btn bg-orange" href="/manage/logout"><i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="col-10">
+                    <div class="page-bar">
+                        <h4>ระบบจัดการตู้</h4>
+                        <div class="float-right">
+                            <ul id="breadcrumb">
+                                <li><a href="/manage">หน้าหลัก</a></li>
+                            </ul>
+                        </div>
+                        <div class="clear"></div>
+                    </div>
+                    <div class="content">
+                        <div class="text-right boxBtn">
+                            <button class="btn btn-info btnPrintQrAll"><i class='fas fa-print'></i> PrintQR</button>
+                            <button class="btn btn-primary btnAdd"><i class='fas fa-plus'></i> เพิ่ม</button>
+                        </div>
+                        <table id="table" class="table text-center" style="width:100%">
+                                    
+                        </table>
+
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+</html>

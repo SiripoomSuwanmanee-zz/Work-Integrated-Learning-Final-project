@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>print qr</title>
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/qrcode.min.js"></script>
+    <script>
+        var link = window.location.origin;
+        var type = localStorage.getItem("type");
+        var id = localStorage.getItem("id");
+        const countTime = 800;
+        $(document).ready(async function () {
+
+            if(type == "map")
+            {
+                await createBox(type);
+            }
+            else if(type == "qrcode")
+            {
+                await createBox(type);
+            }
+            else
+            {
+                if(id == "all"){
+                    $.ajax({
+                        method: "GET",
+                        url: "/manage/"+type+"/all"
+                    }).done(function(dataSet, state, xhr){
+                        $.each(dataSet, async function(index, data){
+                            await createBox(data);
+
+                            //ถ้าครบ 2 qr ให้ปริ้น ขึ้นหน้าใหม่
+                            if((index+1)%2 == 0){ 
+                                console.log(index);
+                                $("body").append("<div class='page-break'></div>");
+                            }
+                        });
+                    });
+                }
+                else{
+                    $.ajax({
+                        method: "GET",
+                        url: "/manage/"+type+"/"+id
+                    }).done(async function(data, state, xhr){
+                        await createBox(data);
+                    });
+                }
+            }
+            
+            //หน่วงเวลา ให้ระบบดึงข้อมูลก่อนค่อยสั่งปริ้น
+            var interval = setInterval(function(){ 
+                window.print(); 
+                clearInterval(interval); 
+            }, countTime);
+            
+            
+        });
+
+
+
+
+        function createBox(data){
+            let boxId = "";
+            if(type == "cabinet"){
+                boxId = data.cab_id;
+                $("body").append("<div id='box"+boxId+"'></div><h2 id='text"+boxId+"'></h2>");
+                $("#text"+boxId).append("ตู้ที่ "+data.cab_number);
+            }
+            else if(type == "artifact"){
+                boxId = data.ar_id;
+                $("body").append("<div id='box"+boxId+"'></div><h2 id='text"+boxId+"'></h2>");
+                $("#text"+boxId).append(data.ar_th_name);
+            }
+            else if(type == "map"){
+                boxId = data;
+                $("body").append("<div id='box"+boxId+"'></div><h2 id='text'></h2>");
+                $("#text").append("แผนผัง");
+            }
+            else if(type == "qrcode"){
+                boxId = type;
+                $("body").append("<div id='box"+boxId+"'></div><h2 id='text'></h2>");
+                
+            }
+            genQR(boxId);
+        }
+
+        function genQR(boxId){
+            let url;
+            if(boxId == "map")
+            {
+                url = link+"/"+type;
+                createQRbox(url, boxId);
+            }
+            else if(boxId == "qrcode")
+            {
+                url = link+"/visitor";
+                $.ajax({
+                    method: "GET",
+                    url: "/manage/getQR"
+                }).done(function(data, state, xhr){
+                    createQRbox(url, boxId);
+                    $("#text").append(data.qr_name);
+                });
+                
+            }
+            else{
+                url = link+"/"+type+"/"+boxId;
+                createQRbox(url, boxId);
+            }
+        }
+
+        function createQRbox(url, boxId){
+            let qrcode = document.getElementById("box"+boxId);
+            new QRCode(qrcode, {
+                text: url,
+                width: 300,
+                height: 300
+             });
+        }
+    </script>
+    <style>
+        @page { margin: 0; }
+        
+        div{
+            margin-top: 100px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        div img{
+            display: inline !important;
+        }
+        h2{
+            text-align: center;
+        }
+
+        @media all{
+            .page-break{
+                display: none;
+            }
+        }
+        @media print{
+            .page-break{
+                display: block;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+</body>
+</html>

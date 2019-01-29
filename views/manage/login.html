@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>เข้าสู่ระบบ::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <style>
+        html, body{
+            height: 100%;
+            background: white;
+        }
+        h2{
+            letter-spacing: 5px;
+        }
+        .form-login{
+            margin-top: 5em;
+        }
+        .btn{
+            padding: .7em 3em;
+            color: white;
+            font-weight: bold;
+        }
+        .line-input{
+            border: 0;
+            border-bottom: 1px solid gainsboro;
+            padding: 1.5em 1em;
+        }
+    </style>
+    <script>
+        $(document).ready(function(){
+            $("input").on( "keydown", function(event) {
+                if(event.which == 13) 
+                    $(".btnLogin").click();
+            });
+
+            $(".btnLogin").click(function(){
+                
+                let username = $("#username").val();
+                let password = $("#password").val();
+                let remember = $("#remember").prop('checked');
+                if(username == ""){
+                    msgAlert("กรุณากรอกชื่อผู้ใช้งาน");
+                    $("#username").focus();
+                }
+                else if(password == ""){
+                    msgAlert("กรุณากรอกรหัสผ่าน");
+                    $("#password").focus();
+                }
+                else{
+
+                    $.ajax({
+                        method: "POST",
+                        url: "/manage/login",
+                        data: {username: username, password: password, remember: remember}
+                    }).done(function (data, state, xhr) {
+                        window.location.replace("/manage/dashboard");
+                    }).fail(function (xhr, state) {
+                        msgAlert("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
+                    });
+
+                }
+            });
+        });
+
+        function msgAlert(msg){
+            $(".alert").hide().text(msg).show();
+        }
+    </script>
+</head> 
+    
+<body>
+    <div class="login-header"></div>
+    <div class="row h-100">
+        <div id="bg" class="col-12 col-md-6">
+            <img src="/images/login-image.PNG" alt="">
+        </div>
+        <div class="col-12 col-md-6 m-auto">
+            <div class="login-container m-auto">
+                <h2 class="text-center mt-5 text-orange font-weight-bold">Mekong Basin <br/>Civilization Museum</h2>
+                <div class="form-login">
+                    <div class="form-group">
+                        <input type="text" class="form-control line-input" name="username" id="username" placeholder="ชื่อผู้ใช้งาน">
+                    </div>
+                    <div class="form-group mt-4">
+                        <input type="password" class="form-control line-input" name="password" id="password" placeholder="รหัสผ่าน">
+                    </div>
+                    <div class="custom-control custom-checkbox mt-5">
+                        <input type="checkbox" class="custom-control-input" id="remember">
+                        <label class="custom-control-label" for="remember">จำรหัสผ่าน</label>
+                    </div>
+                    <div class="form-group mt-4 text-center">
+                        <button type="button" class="btn bg-orange btnLogin">เข้าสู่ระบบ</button>
+                    </div>
+                    <div class="alert alert-danger mt-4 font-weight-bold" style="display: none;">
+                            ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

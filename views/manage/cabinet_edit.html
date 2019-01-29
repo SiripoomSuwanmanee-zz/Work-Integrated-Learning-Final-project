@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ระบบจัดการตู้::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/DataTables/DataTables-1.10.18/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="/DataTables/Responsive-2.2.2/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/dropzone.min.css">
+
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/bootbox.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/jquery.dataTables.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/dataTables.bootstrap4.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/dataTables.responsive.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/responsive.bootstrap4.min.js"></script>
+    <script src="/scripts/dropzone.min.js"></script>
+    <script>
+        
+        var url = window.location.pathname;
+        var id = url.substring(url.lastIndexOf('/') + 1);
+        Dropzone.autoDiscover = false;
+
+        $(document).ready(function(){
+            getCabinet(id);
+            $("form").attr("action", "/manage/cabinet/edit/"+id);
+            $(".dropzone").dropzone({ 
+                url: "/manage/cabinet/edit/"+id,
+                method: "POST",
+                autoProcessQueue: false,
+                paramName: 'image_field',
+                maxFiles: 1,
+                acceptedFiles: 'image/*',
+                dictDefaultMessage: 'คลิกเพื่อเลือกรูปหรือลากรูปมาวางที่นี่',
+                init: function() {
+                    myDropzone = this; 
+                    // for Dropzone to process the queue (instead of default form behavior):
+
+                    $("form").one('submit', function(e){
+                        form = this;
+                        e.preventDefault();
+                        bootbox.confirm("ยืนยันการแก้ไขข้อมูลนี้หรือไม่?", function(result){
+                            if(result == true){
+                                // Make sure that the form isn't actually being sent.
+                                if(myDropzone.getQueuedFiles().length > 0){
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    myDropzone.processQueue();
+                                }
+                                else{
+                                        form.submit();
+                               
+                                    
+                        
+                                }
+                            }
+                        });
+                    });
+
+                    $(".btnReset").click(function(){
+                        myDropzone.removeAllFiles(true); 
+                        $.ajax({
+                            method: "GET",
+                            url: "/manage/cabinet/"+id
+                        }).done(function(data, state, xhr){
+                            $("#txtNumber").val(data.cab_number);
+                            $("#txtDescTh").val(data.cab_th_detail);
+                            $("#txtDescEn").val(data.cab_en_detail);
+                            $("#imageFieldOld").val(data.cab_image);
+                            $("#imageOld").val("yes");
+                            if(data.cab_image != "")
+                                $(".dropzone").addClass('edit-image').append("<img src='/images/"+data.cab_image+"' id='preImage'/>");
+
+                            if(data.cab_active_flag == 1)
+                                $("#statusOpen").prop("checked", true);
+                            else
+                                $("#statusClose").prop("checked", true);
+                            
+                        }).fail(function(xhr, state){
+                            alert("Error");
+                        });
+                        $("#preImage").removeClass("d-none").addClass("d-block");
+                    });
+
+                    this.on("addedfile", function(){
+                        $(".edit-image #preImage").removeClass("d-block").addClass("d-none");
+                    });
+
+                    //ถ้าอัพรูปเกิน 1 รูปจะลบรูปก่อนหน้าออก
+                    this.on("maxfilesexceeded", function(file) {
+                        this.removeAllFiles();
+                        this.addFile(file);
+                    });
+
+                    //ส่ง field อื่นๆไปด้วยพร้อมกับ file รูป
+                    this.on("sending", function(data, xhr, formData) {
+                        let txtNumber = $("#txtNumber").val();
+                        let txtDescTh = $("#txtDescTh").val();
+                        let txtDescEn = $("#txtDescEn").val();
+                        let imageFieldOld = $("#imageFieldOld").val();
+                        let cabStatus = $("input[type='radio']:checked").val();
+                        
+                        formData.append("txt_number", txtNumber);
+                        formData.append("txt_desc_th_cab", txtDescTh);
+                        formData.append("txt_desc_en_cab", txtDescEn);
+                        formData.append("image_old", "no");
+                        formData.append("image_old_field", imageFieldOld);
+                        formData.append("cab_active_flag", cabStatus);
+                    });
+
+                    this.on("success", function(file, response){
+                        window.location.replace(response);
+                    });
+                }
+            });
+        });
+        function getCabinet(id){
+            $.ajax({
+                method: "GET",
+                url: "/manage/cabinet/"+id
+            }).done(function(data, state, xhr){
+                setupPage(data);
+                $("#txtNumber").val(data.cab_number);
+                $("#txtDescTh").val(data.cab_th_detail);
+                $("#txtDescEn").val(data.cab_en_detail);
+                $("#imageFieldOld").val(data.cab_image);
+                $("#imageOld").val("yes");
+                if(data.cab_image != "")
+                    $(".dropzone").addClass('edit-image').append("<img src='/images/"+data.cab_image+"' id='preImage'/>");
+
+                if(data.cab_active_flag == 1)
+                    $("#statusOpen").prop("checked", true);
+                else
+                    $("#statusClose").prop("checked", true);
+                
+            }).fail(function(xhr, state){
+                alert("Error");
+            });
+        }
+
+        function setupPage(data){
+            var navPath = url.split('/')[2]; //ไว้ดูว่าเรากำลังเปิดหน้าไหนอยู่
+            $("a.nav-link[href='/manage/"+navPath+"']").parent().addClass("active"); 
+
+             $(".page-bar > h4").text("ระบบจัดการตู้::แก้ไขตู้::ตู้ที่ "+data.cab_number);
+               $("#breadcrumb").append("<li><a href='/manage/cabinet'>ระบบจัดการตู้</a></li>");
+               $("#breadcrumb").append("<li>ตู้ที่ "+data.cab_number+"</li>");
+        }
+       
+        $(window).scroll(function (event) {
+            var scroll = $(window).scrollTop();
+            let pt = 60;
+            if(scroll == 0)
+                $("aside").css("padding-top", pt);
+            else if(scroll > 60)
+                $("aside").css("padding-top", 0);
+            else
+                $("aside").css("padding-top", pt-scroll);
+        });
+    </script>
+</head> 
+<body>
+        <header>
+            <h1><strong>MEKONG BASIN</strong> CIVILIZATION MUSEUM</h1>
+        </header>
+        <div class="container-fluid main-container h-100">
+            <div class="row h-100">
+                <aside class="col-2 ">
+                    <nav class="navbar navbar-expand h-100">
+                        <ul class="flex-md-column flex-row justify-content-between h-100">
+                            <li class="nav-small">
+                                เมนูหลัก
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="/manage/dashboard"><i class="fas fa-home"></i> หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/cabinet"><i class="fas fa-edit"></i> ระบบจัดการตู้</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/type"><i class="fas fa-edit"></i> ระบบจัดการชนิดวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/artifact"><i class="fas fa-edit"></i> ระบบจัดการวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/map"><i class="fas fa-map-marker-alt"></i> ระบบจัดการแผนผัง</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/qrcode"><i class="fas fa-qrcode"></i> ระบบจัดการ QR Code</a>
+                            </li>
+                            <li class="w-100 btn-delete">
+                                <a class="nav-link btn bg-orange" href="/manage/logout"><i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="col-10">
+                    <div class="page-bar">
+                        <h4>ระบบจัดการตู้</h4>
+                        <div class="float-right">
+                            <ul id="breadcrumb">
+                                <li><a href="/manage">หน้าหลัก</a></li>
+                            </ul>
+                        </div>
+                        <div class="clear"></div>
+                    </div>
+                    <div class="content">
+                        <div class="box">
+                            <form id="cabinetEdit" action="/manage/cabinet/edit" method="POST"  enctype="multipart/form-data">
+                                <div class="form-group text-center mt-3 mb-5">
+                                    <div class="d-inline-block custom-radio">
+                                        <input type="radio" id="statusOpen" name="cab_active_flag" class="custom-control-input" value="1" required>
+                                        <label class="custom-control-label mr-5 text-green font-weight-bold" for="statusOpen">สถานะเปิด</label>
+                                    </div>
+                                    <div class="d-inline-block custom-radio">
+                                        <input type="radio" id="statusClose" name="cab_active_flag" class="custom-control-input" value="0">
+                                        <label class="custom-control-label text-red font-weight-bold" for="statusClose">สถานะปิด</label>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center">
+                                    <div class="d-inline-block mx-auto">
+                                        <label class="float-left  mr-5">รูปภาพตู้: </label>        
+                                        <input type="hidden" name="image_old" id="imageOld">
+                                        <input type="hidden" name="image_old_field" id="imageFieldOld">
+                                        <div class="dropzone drop-image text-center">
+                                            <div class="fallback">
+                                              <input name="file" type="file" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center">
+                                    <div class="d-inline-block mx-auto">
+                                        <label for="txtNumber" class="float-left mr-4">หมายเลขตู้: </label>
+                                        <input type="number" class="form-control" style="width: 400px;" name="txt_number" id="txtNumber" placeholder="กรอกหมายเลขตู้" max="9999999999"  required>
+                                    </div>
+                                </div>
+                                <div class="row mt-5">
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtDescTh"  class="col-4">รายละเอียดตู้ (ภาษาไทย): </label>
+                                            <textarea class="form-control col-8" id="txtDescTh" name="txt_desc_th_cab" rows="10" placeholder="กรอกรายละเอียดตู้ภาษาไทย" maxlength="255" required></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-12 col-md-6 px-5">
+                                        <div class="row">
+                                            <label for="txtDescEn"  class="col-4">รายละเอียดตู้ (English): </label>
+                                            <textarea class="form-control col-8" id="txtDescEn" name="txt_desc_en_cab" rows="10" maxlength="255" placeholder="กรอกรายละเอียดตู้ภาษาอังกฤษ"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center mt-5">
+                                    <button type="submit" class="btn btn-warning btnEdit"><i class="fas fa-edit"></i> แก้ไข</button>
+                                    <button type="reset" class="btn btn-danger btnReset ml-3"><i class='fas fa-undo'></i> ล้าง</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+</html>

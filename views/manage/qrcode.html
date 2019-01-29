@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ระบบจัดการ QR Code::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="/styles/styles.css">
+ 
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/bootbox.min.js"></script>
+    <script>
+        
+        var url = window.location.pathname;
+
+        $(document).ready(function(){
+            setupPage();
+            $.ajax({
+                method: "GET",
+                url: "/manage/getQR"
+            }).done(function(data, state, xhr){
+                $("#txtUrl").val(data.qr_url);
+                $("#txtName").val(data.qr_name);
+            });
+            $(".btnUpdate").click(function(){
+                let txtUrl = $("#txtUrl").val();
+                let txtName = $("#txtName").val();
+
+                if(txtUrl == ""){
+                    alert("กรุณากรอก URL");
+                    $("#txtUrl").focus();
+                }
+                else if(txtName == ""){
+                    
+                    alert("กรุณากรอก Name");
+                    $("#txtName").focus();
+                }
+                else{
+                    $.ajax({
+                        method: "POST",
+                        url: "/manage/updateQR",
+                        data: {
+                            url: txtUrl,
+                            name: txtName
+                        }
+                    }).done(function(data, state, xhr){
+                        location.reload();
+                    }).fail(function (xhr, state, err) {
+                        console.log("error");
+                    });
+                }
+            })
+
+            $(".btnPrintQr").click(function(){
+                printPageQr();
+            });
+            
+        });
+        function setupPage(){
+            var navPath = url.split('/')[2]; //ไว้ดูว่าเรากำลังเปิดหน้าไหนอยู่
+            $("a.nav-link[href='/manage/"+navPath+"']").parent().addClass("active"); 
+            
+            $("#breadcrumb").append("<li><a href='/manage/qrcode'>ระบบจัดการ QR Code</a></li>");
+        }
+        
+        function printPageQr() {
+            localStorage.setItem("type", "qrcode");
+            $("<iframe>").hide().attr("src", "/manage/printqr").appendTo("body"); 
+        }
+
+        $(window).scroll(function (event) {
+            var scroll = $(window).scrollTop();
+            let pt = 60;
+            if(scroll == 0)
+                $("aside").css("padding-top", pt);
+            else if(scroll > 60)
+                $("aside").css("padding-top", 0);
+            else
+                $("aside").css("padding-top", pt-scroll);
+        });
+    </script>
+</head> 
+<body>
+        <header>
+            <h1><strong>MEKONG BASIN</strong> CIVILIZATION MUSEUM</h1>
+        </header>
+        <div class="container-fluid main-container h-100">
+            <div class="row h-100">
+                <aside class="col-2 ">
+                    <nav class="navbar navbar-expand h-100">
+                        <ul class="flex-md-column flex-row justify-content-between h-100">
+                            <li class="nav-small">
+                                เมนูหลัก
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="/manage/dashboard"><i class="fas fa-home"></i> หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/cabinet"><i class="fas fa-edit"></i> ระบบจัดการตู้</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/type"><i class="fas fa-edit"></i> ระบบจัดการชนิดวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/artifact"><i class="fas fa-edit"></i> ระบบจัดการวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/map"><i class="fas fa-map-marker-alt"></i> ระบบจัดการแผนผัง</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/qrcode"><i class="fas fa-qrcode"></i> ระบบจัดการ QR Code</a>
+                            </li>
+                            <li class="w-100 btn-delete">
+                                <a class="nav-link btn bg-orange" href="/manage/logout"><i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="col-10">
+                    <div class="page-bar">
+                        <h4>ระบบจัดการ QR Code</h4>
+                        <div class="float-right">
+                            <ul id="breadcrumb">
+                                <li><a href="/manage">หน้าหลัก</a></li>
+                            </ul>
+                        </div>
+                        <div class="clear"></div>
+                    </div>
+                    <div class="content">
+                        <div class="box">
+                            <div class="form-group">
+                              <label for="txtName">ชื่อ: </label>
+                              <input type="text" class="form-control" name="txtName" id="txtName" aria-describedby="helpId" placeholder="กรอกชื่อที่ต้องการสร้าง เช่น ฟอร์มแบบประเมิน">
+                            </div>
+
+                            <div class="form-group">
+                              <label for="txtUrl">URL: </label>
+                              <input type="text" class="form-control" name="txtUrl" id="txtUrl" aria-describedby="helpId" placeholder="กรอก URL ที่ต้องการสร้าง QR Code">
+                            </div>
+                            
+                            <div class="form-group text-center mt-5">
+                                <button class="btn btn-primary btnUpdate mr-4"><i class='fas fa-plus'></i> อัพเดท</button>
+                                <button class="btn btn-info btnPrintQr"><i class='fas fa-print'></i> PrintQR</button>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+</html>

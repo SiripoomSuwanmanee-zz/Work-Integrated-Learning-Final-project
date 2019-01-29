@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>ระบบจัดการชนิดวัตถุ::พิพิธภัณฑ์อารยธรรมลุ่มน้ำโขง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles/bootstrap.min.css">
+    <link rel="stylesheet" href="/DataTables/DataTables-1.10.18/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="/DataTables/Responsive-2.2.2/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/dropzone.min.css">
+
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/bootbox.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/jquery.dataTables.min.js"></script>
+    <script src="/DataTables/DataTables-1.10.18/js/dataTables.bootstrap4.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/dataTables.responsive.min.js"></script>
+    <script src="/DataTables/Responsive-2.2.2/js/responsive.bootstrap4.min.js"></script>
+    <script src="/scripts/dropzone.min.js"></script>
+    <script>
+        
+        var url = window.location.pathname;
+        var id = url.substring(url.lastIndexOf('/') + 1);
+
+        $(document).ready(function(){
+            getType(id);
+            $("form").attr("action", "/manage/type/update/"+id);
+            $("form").on('submit', function(e){
+                form = this;
+                e.preventDefault();
+                bootbox.confirm("ยืนยันการแก้ไขข้อมูลนี้หรือไม่?", function(result){
+                    if(result == true){
+                        form.submit();
+                    }
+                });
+            });
+
+            $(".btnReset").click(function(){
+                $.ajax({
+                method: "GET",
+                url: "/manage/type/"+id
+                }).done(function(data, state, xhr){
+                    $("#txtNumber").val(data.type_number);
+                    $("#txtNameTh").val(data.type_th_name);
+                    $("#txtNameEn").val(data.type_en_name);
+                
+                }).fail(function(xhr, state){
+                    alert("Error");
+                });
+            });
+        });
+        function getType(id){
+            $.ajax({
+                method: "GET",
+                url: "/manage/type/"+id
+            }).done(function(data, state, xhr){
+                setupPage(data);
+                $("#txtNumber").val(data.type_number);
+                $("#txtNameTh").val(data.type_th_name);
+                $("#txtNameEn").val(data.type_en_name);
+               
+            }).fail(function(xhr, state){
+                alert("Error");
+            });
+        }
+
+        function setupPage(data){
+            var navPath = url.split('/')[2]; //ไว้ดูว่าเรากำลังเปิดหน้าไหนอยู่
+            $("a.nav-link[href='/manage/"+navPath+"']").parent().addClass("active"); 
+
+             $(".page-bar > h4").text("ระบบจัดการชนิดวัตถุ::แก้ไขชนิด::รหัสชนิด "+data.type_number);
+               $("#breadcrumb").append("<li><a href='/manage/type'>ระบบจัดการชนิดวัตถุ</a></li>");
+               $("#breadcrumb").append("<li>รหัสชนิด "+data.type_number+"</li>");
+        }
+       
+        $(window).scroll(function (event) {
+            var scroll = $(window).scrollTop();
+            let pt = 60;
+            if(scroll == 0)
+                $("aside").css("padding-top", pt);
+            else if(scroll > 60)
+                $("aside").css("padding-top", 0);
+            else
+                $("aside").css("padding-top", pt-scroll);
+        });
+    </script>
+</head> 
+<body>
+        <header>
+            <h1><strong>MEKONG BASIN</strong> CIVILIZATION MUSEUM</h1>
+        </header>
+        <div class="container-fluid main-container h-100">
+            <div class="row h-100">
+                <aside class="col-2 ">
+                    <nav class="navbar navbar-expand h-100">
+                        <ul class="flex-md-column flex-row justify-content-between h-100">
+                            <li class="nav-small">
+                                เมนูหลัก
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link " href="/manage/dashboard"><i class="fas fa-home"></i> หน้าแรก</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/cabinet"><i class="fas fa-edit"></i> ระบบจัดการตู้</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/type"><i class="fas fa-edit"></i> ระบบจัดการชนิดวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/artifact"><i class="fas fa-edit"></i> ระบบจัดการวัตถุ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/map"><i class="fas fa-map-marker-alt"></i> ระบบจัดการแผนผัง</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/manage/qrcode"><i class="fas fa-qrcode"></i> ระบบจัดการ QR Code</a>
+                            </li>
+                            <li class="w-100 btn-delete">
+                                <a class="nav-link btn bg-orange" href="/manage/logout"><i class="fas fa-sign-out-alt"></i><span>ออกจากระบบ</span></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </aside>
+                <main class="col-10">
+                    <div class="page-bar">
+                        <h4>ระบบจัดการชนิดวัตถุ</h4>
+                        <div class="float-right">
+                            <ul id="breadcrumb">
+                                <li><a href="/manage">หน้าหลัก</a></li>
+                            </ul>
+                        </div>
+                        <div class="clear"></div>
+                    </div>
+                    <div class="content">
+                        <div class="box">
+                            <form id="typeUpdate" action="/type/update" method="POST" >
+                                <div class="form-group text-center  mt-4">
+                                    <div class="row">
+                                        <label for="txtNumber" class="col-4 text-right">รหัสชนิดวัตถุ: </label>
+                                        <input type="number" class="form-control col-8" style="max-width: 450px !important;" name="txt_number" max="99" id="txtNumber" placeholder="กรอกรหัสชนิดวัตถุ" required>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center mt-5">
+                                    <div class="row">
+                                        <label for="txtNameTh" class="col-4 text-right">ชื่อชนิดวัตถุ (ภาษาไทย): </label>
+                                        <input type="text" class="form-control col-8" style="max-width: 450px !important;" name="txt_name_th" id="txtNameTh" maxlength="100" placeholder="กรอกชื่อชนิดวัตถุภาษาไทย" required>
+                                    </div>
+                                </div>
+                                <div class="form-group text-center mt-5">
+                                    <div class="row">
+                                        <label for="txtNameEn" class="col-4 text-right">ชื่อชนิดวัตถุ (English): </label>
+                                        <input type="text" class="form-control col-8" style="max-width: 450px !important;" name="txt_name_en" id="txtNameEn" maxlength="100" placeholder="กรอกชื่อชนิดวัตถุภาษาอังกฤษ" >
+                                    </div>
+                                </div>
+                                <div class="form-group text-center mt-5">
+                                    <button type="submit" class="btn btn-warning btnEdit"><i class="fas fa-edit"></i> แก้ไข</button>
+                                    <button type="reset" class="btn btn-danger btnReset ml-3"><i class='fas fa-undo'></i> ล้าง</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+</body>
+</html>
